@@ -2,19 +2,19 @@
 // @id             iitc-plugin-keys-on-map@xelio
 // @name           IITC plugin: Keys on map
 // @category       Keys
-// @version        0.2.1.20150917.154202
+// @version        0.2.1.20161003.4740
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @updateURL      https://secure.jonatkins.com/iitc/release/plugins/keys-on-map.meta.js
-// @downloadURL    https://secure.jonatkins.com/iitc/release/plugins/keys-on-map.user.js
-// @description    [jonatkins-2015-09-17-154202] Show the manually entered key counts from the 'keys' plugin on the map.
-// @include        https://www.ingress.com/intel*
-// @include        http://www.ingress.com/intel*
-// @match          https://www.ingress.com/intel*
-// @match          http://www.ingress.com/intel*
-// @include        https://www.ingress.com/mission/*
-// @include        http://www.ingress.com/mission/*
-// @match          https://www.ingress.com/mission/*
-// @match          http://www.ingress.com/mission/*
+// @updateURL      https://static.iitc.me/build/release/plugins/keys-on-map.meta.js
+// @downloadURL    https://static.iitc.me/build/release/plugins/keys-on-map.user.js
+// @description    [iitc-2016-10-03-004740] Show the manually entered key counts from the 'keys' plugin on the map.
+// @include        https://*.ingress.com/intel*
+// @include        http://*.ingress.com/intel*
+// @match          https://*.ingress.com/intel*
+// @match          http://*.ingress.com/intel*
+// @include        https://*.ingress.com/mission/*
+// @include        http://*.ingress.com/mission/*
+// @match          https://*.ingress.com/mission/*
+// @match          http://*.ingress.com/mission/*
 // @grant          none
 // ==/UserScript==
 
@@ -25,8 +25,8 @@ if(typeof window.plugin !== 'function') window.plugin = function() {};
 
 //PLUGIN AUTHORS: writing a plugin outside of the IITC build environment? if so, delete these lines!!
 //(leaving them in place might break the 'About IITC' page or break update checks)
-plugin_info.buildName = 'jonatkins';
-plugin_info.dateTimeVersion = '20150917.154202';
+plugin_info.buildName = 'iitc';
+plugin_info.dateTimeVersion = '20161003.4740';
 plugin_info.pluginId = 'keys-on-map';
 //END PLUGIN AUTHORS NOTE
 
@@ -80,11 +80,12 @@ window.plugin.keysOnMap.refreshAllKeys = function() {
 
 window.plugin.keysOnMap.renderKey = function(guid,latLng) {
     plugin.keysOnMap.removeKey(guid);
+
     if (plugin.keys.keys[plugin.keys.CapsuleID]==undefined)
       var keyCount = 0;
     else
       var keyCount = plugin.keys.keys[plugin.keys.CapsuleID][guid];
-    
+
     if (keyCount > 0) {
       var key = L.marker(latLng, {
         icon: L.divIcon({
@@ -167,3 +168,5 @@ var info = {};
 if (typeof GM_info !== 'undefined' && GM_info && GM_info.script) info.script = { version: GM_info.script.version, name: GM_info.script.name, description: GM_info.script.description };
 script.appendChild(document.createTextNode('('+ wrapper +')('+JSON.stringify(info)+');'));
 (document.body || document.head || document.documentElement).appendChild(script);
+
+
