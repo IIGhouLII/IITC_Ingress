@@ -2,19 +2,19 @@
 // @id             iitc-plugin-keys@xelio
 // @name           IITC plugin: Keys
 // @category       Keys
-// @version        0.3.0.20150917.154202
+// @version        0.3.0.20161003.4740
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @updateURL      https://secure.jonatkins.com/iitc/release/plugins/keys.meta.js
-// @downloadURL    https://secure.jonatkins.com/iitc/release/plugins/keys.user.js
-// @description    [jonatkins-2015-09-17-154202] Allow manual entry of key counts for each portal. Use the 'keys-on-map' plugin to show the numbers on the map, and 'sync' to share between multiple browsers or desktop/mobile.
-// @include        https://www.ingress.com/intel*
-// @include        http://www.ingress.com/intel*
-// @match          https://www.ingress.com/intel*
-// @match          http://www.ingress.com/intel*
-// @include        https://www.ingress.com/mission/*
-// @include        http://www.ingress.com/mission/*
-// @match          https://www.ingress.com/mission/*
-// @match          http://www.ingress.com/mission/*
+// @updateURL      https://static.iitc.me/build/release/plugins/keys.meta.js
+// @downloadURL    https://static.iitc.me/build/release/plugins/keys.user.js
+// @description    [iitc-2016-10-03-004740] Allow manual entry of key counts for each portal. Use the 'keys-on-map' plugin to show the numbers on the map, and 'sync' to share between multiple browsers or desktop/mobile.
+// @include        https://*.ingress.com/intel*
+// @include        http://*.ingress.com/intel*
+// @match          https://*.ingress.com/intel*
+// @match          http://*.ingress.com/intel*
+// @include        https://*.ingress.com/mission/*
+// @include        http://*.ingress.com/mission/*
+// @match          https://*.ingress.com/mission/*
+// @match          http://*.ingress.com/mission/*
 // @grant          none
 // ==/UserScript==
 
@@ -25,8 +25,8 @@ if(typeof window.plugin !== 'function') window.plugin = function() {};
 
 //PLUGIN AUTHORS: writing a plugin outside of the IITC build environment? if so, delete these lines!!
 //(leaving them in place might break the 'About IITC' page or break update checks)
-plugin_info.buildName = 'jonatkins';
-plugin_info.dateTimeVersion = '20150917.154202';
+plugin_info.buildName = 'iitc';
+plugin_info.dateTimeVersion = '20161003.4740';
 plugin_info.pluginId = 'keys';
 //END PLUGIN AUTHORS NOTE
 
@@ -37,26 +37,28 @@ plugin_info.pluginId = 'keys';
 // use own namespace for plugin
 window.plugin.keys = function() {};
 
-// SyncCode
 // delay in ms
+// SyncCode
 // window.plugin.keys.SYNC_DELAY = 5000;
 
 window.plugin.keys.LOCAL_STORAGE_KEY = 'plugin-keys-data';
 
 window.plugin.keys.KEY = {key: 'plugin-keys-data', field: 'keys'};
-window.plugin.keys.UPDATE_QUEUE = {key: 'plugin-keys-data-queue', field: 'updateQueue'};
-window.plugin.keys.UPDATING_QUEUE = {key: 'plugin-keys-data-updating-queue', field: 'updatingQueue'};
+// SyncCode
+// window.plugin.keys.UPDATE_QUEUE = {key: 'plugin-keys-data-queue', field: 'updateQueue'};
+// window.plugin.keys.UPDATING_QUEUE = {key: 'plugin-keys-data-updating-queue', field: 'updatingQueue'};
 
+window.plugin.keys.CapsuleID=0
 window.plugin.keys.keys = [];
-window.plugin.keys.Total = [];
-
 window.plugin.keys.keys[0] = {};
+
+window.plugin.keys.Total = [];
 window.plugin.keys.Total[0]= 0;
+
 // SyncCode
 // window.plugin.keys.updateQueue = {};
 // window.plugin.keys.updatingQueue = {};
-window.plugin.keys.CapsuleID=0
-// SyncCode
+
 // window.plugin.keys.enableSync = false;
 
 window.plugin.keys.disabledMessage = null;
@@ -112,27 +114,32 @@ window.plugin.keys.changeCapsuleID = function(addCount) {
 window.plugin.keys.addKey = function(addCount, guid) {
   if (plugin.keys.CapsuleID==0) return;
   if(guid == undefined) guid = window.selectedPortal;
+
   if (plugin.keys.keys[plugin.keys.CapsuleID]==undefined)
     var oldCount = 0;
   else
     var oldCount = (plugin.keys.keys[plugin.keys.CapsuleID][guid]|| 0);
+
   var newCount = Math.max(oldCount + addCount, 0);
+
   if(oldCount !== newCount) {
     if(newCount === 0) {
       delete plugin.keys.keys[plugin.keys.CapsuleID][guid];
+      // SyncCode
       // plugin.keys.updateQueue[guid] = null;
     } else {
       if (plugin.keys.keys[plugin.keys.CapsuleID]==undefined) plugin.keys.keys[plugin.keys.CapsuleID] = {};
       if (plugin.keys.Total[plugin.keys.CapsuleID]==undefined) plugin.keys.Total[plugin.keys.CapsuleID] = 0;
       plugin.keys.keys[plugin.keys.CapsuleID][guid] = newCount
-      // ~ plugin.keys.updateQueue[guid] = newCount;
+      // SyncCode
+      // plugin.keys.updateQueue[guid] = newCount;
     }
     plugin.keys.keys[0][guid] = (plugin.keys.keys[0][guid] || 0) +newCount-oldCount;
     if (plugin.keys.keys[0][guid]==0){
       delete plugin.keys.keys[0][guid];
-      // plugin.keys.updateQueue[guid] = null;
+      // SyncCode
+      // plugin.keys.updateQueue[0][guid] = null;
     }
-    
     plugin.keys.Total[plugin.keys.CapsuleID]=plugin.keys.Total[plugin.keys.CapsuleID]+newCount-oldCount;
     if ((plugin.keys.CapsuleID==plugin.keys.keys.length-1)&&(plugin.keys.Total[plugin.keys.CapsuleID]==0)) {
       // console.log("Passed by here");
@@ -147,76 +154,78 @@ window.plugin.keys.addKey = function(addCount, guid) {
       plugin.keys.CapsuleID=plugin.keys.CapsuleID-Index;
     }
     plugin.keys.Total[0]=plugin.keys.Total[0]+newCount-oldCount;
-    
+
     plugin.keys.storeLocal(plugin.keys.KEY);
+    // SyncCode
     // plugin.keys.storeLocal(plugin.keys.UPDATE_QUEUE);
     plugin.keys.updateDisplayCount();
     window.runHooks('pluginKeysUpdateKey', {guid: guid, count: newCount});
+    // SyncCode
     // plugin.keys.delaySync();
   }
 }
 // SyncCode
 // Delay the syncing to group a few updates in a single request
 // window.plugin.keys.delaySync = function() {
-  // if(!plugin.keys.enableSync) return;
-  // clearTimeout(plugin.keys.delaySync.timer);
-  // plugin.keys.delaySync.timer = setTimeout(function() {
-      // plugin.keys.delaySync.timer = null;
-      // window.plugin.keys.syncNow();
-    // }, plugin.keys.SYNC_DELAY);
+//   if(!plugin.keys.enableSync) return;
+//   clearTimeout(plugin.keys.delaySync.timer);
+//   plugin.keys.delaySync.timer = setTimeout(function() {
+//       plugin.keys.delaySync.timer = null;
+//       window.plugin.keys.syncNow();
+//     }, plugin.keys.SYNC_DELAY);
 // }
 // SyncCode
 // Store the updateQueue in updatingQueue and upload
 // window.plugin.keys.syncNow = function() {
-  // if(!plugin.keys.enableSync) return;
-  // window.plugin.keys.mergeKeys(plugin.keys.updatingQueue, plugin.keys.updateQueue);
-  // plugin.keys.updateQueue = {};
-  // plugin.keys.storeLocal(plugin.keys.UPDATING_QUEUE);
-  // plugin.keys.storeLocal(plugin.keys.UPDATE_QUEUE);
+//   if(!plugin.keys.enableSync) return;
+//   $.extend(plugin.keys.updatingQueue, plugin.keys.updateQueue);
+//   plugin.keys.updateQueue = {};
+//   plugin.keys.storeLocal(plugin.keys.UPDATING_QUEUE);
+//   plugin.keys.storeLocal(plugin.keys.UPDATE_QUEUE);
 
-  // plugin.sync.updateMap('keys', 'keys', Object.keys(plugin.keys.updatingQueue));
+//   plugin.sync.updateMap('keys', 'keys', Object.keys(plugin.keys.updatingQueue));
 // }
 // SyncCode
 // Call after IITC and all plugin loaded
 // window.plugin.keys.registerFieldForSyncing = function() {
-  // if(!window.plugin.sync) return;
-  // window.plugin.sync.registerMapForSync('keys', 'keys', window.plugin.keys.syncCallback, window.plugin.keys.syncInitialed);
+//   if(!window.plugin.sync) return;
+//   window.plugin.sync.registerMapForSync('keys', 'keys', window.plugin.keys.syncCallback, window.plugin.keys.syncInitialed);
 // }
 // SyncCode
-// Call after local or remote change uploaded
+// // Call after local or remote change uploaded
 // window.plugin.keys.syncCallback = function(pluginName, fieldName, e, fullUpdated) {
-  // if(fieldName === 'keys') {
-    // plugin.keys.storeLocal(plugin.keys.KEY);
-    // // All data is replaced if other client update the data during this client offline, 
-    // // fire 'pluginKeysRefreshAll' to notify a full update
-    // if(fullUpdated) {
-      // plugin.keys.updateDisplayCount();
-      // window.runHooks('pluginKeysRefreshAll');
-      // return;
-    // }
+//   if(fieldName === 'keys') {
+//     plugin.keys.storeLocal(plugin.keys.KEY);
+//     // All data is replaced if other client update the data during this client offline,
+//     // fire 'pluginKeysRefreshAll' to notify a full update
+//     if(fullUpdated) {
+//       plugin.keys.updateDisplayCount();
+//       window.runHooks('pluginKeysRefreshAll');
+//       return;
+//     }
 
-    // if(!e) return;
-    // if(e.isLocal) {
-      // // Update pushed successfully, remove it from updatingQueue
-      // delete plugin.keys.updatingQueue[e.property];
-    // } else {
-      // // Remote update
-      // delete plugin.keys.updateQueue[e.property];
-      // plugin.keys.storeLocal(plugin.keys.UPDATE_QUEUE);
-      // plugin.keys.updateDisplayCount();
-      // window.runHooks('pluginKeysUpdateKey', {guid: e.property, count: plugin.keys.keys[e.property]});
-    // }
-  // }
+//     if(!e) return;
+//     if(e.isLocal) {
+//       // Update pushed successfully, remove it from updatingQueue
+//       delete plugin.keys.updatingQueue[e.property];
+//     } else {
+//       // Remote update
+//       delete plugin.keys.updateQueue[e.property];
+//       plugin.keys.storeLocal(plugin.keys.UPDATE_QUEUE);
+//       plugin.keys.updateDisplayCount();
+//       window.runHooks('pluginKeysUpdateKey', {guid: e.property, count: plugin.keys.keys[e.property]});
+//     }
+//   }
 // }
 // SyncCode
 // syncing of the field is initialed, upload all queued update
 // window.plugin.keys.syncInitialed = function(pluginName, fieldName) {
-  // if(fieldName === 'keys') {
-    // plugin.keys.enableSync = true;
-    // if(Object.keys(plugin.keys.updateQueue).length > 0) {
-      // plugin.keys.delaySync();
-    // }
-  // }
+//   if(fieldName === 'keys') {
+//     plugin.keys.enableSync = true;
+//     if(Object.keys(plugin.keys.updateQueue).length > 0) {
+//       plugin.keys.delaySync();
+//     }
+//   }
 // }
 
 window.plugin.keys.storeLocal = function(mapping) {
@@ -231,10 +240,10 @@ window.plugin.keys.storeLocal = function(mapping) {
 window.plugin.keys.loadLocal = function(mapping) {
   var objectJSON = localStorage[mapping.key];
   if (!objectJSON) return;
-  plugin.keys[mapping.field] = mapping.convertFunc 
+  plugin.keys[mapping.field] = mapping.convertFunc
                           ? mapping.convertFunc(JSON.parse(objectJSON))
                           : JSON.parse(objectJSON);
-  
+
   if (plugin.keys[mapping.field].length==0) {
     plugin.keys[mapping.field][0]={};
     plugin.keys.Total[0]=0;
@@ -257,26 +266,9 @@ window.plugin.keys.loadLocal = function(mapping) {
 // window.plugin.keys.loadKeys = function() {
 //   var keysObjectJSON = localStorage[plugin.keys.KEY.key];
 //   if(!keysObjectJSON) return;
-
 //   var keysObject = JSON.parse(keysObjectJSON);
 //   // Move keys data up one level, it was {keys: keys_data} in localstorage in previous version
-//   var i;
-  
-//   for (i = 0; i < keysObject.length; i++) {
-//     if (keysObject[i]!=null) plugin.keys.keys[i+1] = keysObject[i].keys ? keysObject[i].keys : keysObject[i];
-//     plugin.keys.Total[i+1]=0;
-//     $.each(plugin.keys.keys[i+1], function(key, count) {
-//     plugin.keys.Total[i+1]=plugin.keys.Total[i+1]+count;
-//     });
-//   }
-//   if (keysObject.length>0){
-//     plugin.keys.keys[0]=Object.assign({}, plugin.keys.keys[1]);
-//     plugin.keys.Total[0]= plugin.keys.Total[1];
-//     for (i = 2; i < plugin.keys.keys.length; i++) {
-//       plugin.keys.keys[0] = window.plugin.keys.mergeKeys(plugin.keys.keys[0] , plugin.keys.keys[i]);
-//       plugin.keys.Total[0] += plugin.keys.Total[i];
-//     }
-//   }
+//   plugin.keys.keys = keysObject.keys ? keysObject.keys : keysObject;
 //   if(keysObject.keys) plugin.keys.storeLocal(plugin.keys.KEY);
 // }
 
@@ -332,6 +324,7 @@ window.plugin.keys.setupPortalsList = function() {
 
   window.addHook('pluginKeysUpdateKey', function(data) {
     $('[data-list-keycount="'+data.guid+'"]').text(data.count || 0);
+    // $('[data-list-keycount="'+data.guid+'"]').text(data.count);
   });
 
   window.addHook('pluginKeysRefreshAll', function() {
@@ -390,7 +383,6 @@ var setup =  function() {
   window.plugin.keys.setupContent();
   // SyncCode
   // window.plugin.keys.loadLocal(plugin.keys.UPDATE_QUEUE);
-  window.plugin.keys.loadLocal(plugin.keys.KEY);
   // window.plugin.keys.loadKeys();
   window.addHook('portalDetailsUpdated', window.plugin.keys.addToSidebar);
   // SyncCode
@@ -428,3 +420,5 @@ var info = {};
 if (typeof GM_info !== 'undefined' && GM_info && GM_info.script) info.script = { version: GM_info.script.version, name: GM_info.script.name, description: GM_info.script.description };
 script.appendChild(document.createTextNode('('+ wrapper +')('+JSON.stringify(info)+');'));
 (document.body || document.head || document.documentElement).appendChild(script);
+
+
