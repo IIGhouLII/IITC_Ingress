@@ -38,28 +38,27 @@ plugin_info.pluginId = 'keys';
 window.plugin.keys = function() {};
 
 // delay in ms
-// SyncCode
-// window.plugin.keys.SYNC_DELAY = 5000;
+window.plugin.keys.SYNC_DELAY = 5000;
 
 window.plugin.keys.LOCAL_STORAGE_KEY = 'plugin-keys-data';
 
 window.plugin.keys.KEY = {key: 'plugin-keys-data', field: 'keys'};
-// SyncCode
-// window.plugin.keys.UPDATE_QUEUE = {key: 'plugin-keys-data-queue', field: 'updateQueue'};
-// window.plugin.keys.UPDATING_QUEUE = {key: 'plugin-keys-data-updating-queue', field: 'updatingQueue'};
+window.plugin.keys.UPDATE_QUEUE = {key: 'plugin-keys-data-queue', field: 'updateQueue'};
+window.plugin.keys.UPDATING_QUEUE = {key: 'plugin-keys-data-updating-queue', field: 'updatingQueue'};
 
 window.plugin.keys.CapsuleID=0
 window.plugin.keys.keys = [];
-window.plugin.keys.keys[0] = {};
+window.plugin.keys.updateQueue = [];
+window.plugin.keys.updatingQueue = [];
 
-window.plugin.keys.Total = [];
-window.plugin.keys.Total[0]= 0;
+window.plugin.keys.NCapsules=11;
+for (i = 0; i < plugin.keys.NCapsules; i++) {
+  window.plugin.keys.keys[i] = {"TOTAL":0};
+  window.plugin.keys.updateQueue[i] = {"TOTAL":0};
+  window.plugin.keys.updatingQueue[i] = {"TOTAL":0};
+}
 
-// SyncCode
-// window.plugin.keys.updateQueue = {};
-// window.plugin.keys.updatingQueue = {};
-
-// window.plugin.keys.enableSync = false;
+window.plugin.keys.enableSync = false;
 
 window.plugin.keys.disabledMessage = null;
 window.plugin.keys.contentHTML = null;
@@ -76,8 +75,7 @@ window.plugin.keys.addToSidebar = function() {
 
 window.plugin.keys.updateDisplayCount = function() {
   var guid = window.selectedPortal;
-  if (plugin.keys.keys[plugin.keys.CapsuleID]==undefined) var count = 0;
-  else var count = plugin.keys.keys[plugin.keys.CapsuleID][guid] || 0;
+  var count = plugin.keys.keys[plugin.keys.CapsuleID][guid] || 0;
   $('#keys-count').html(count);
   switch (plugin.keys.CapsuleID) {
     case 0:
@@ -102,11 +100,11 @@ window.plugin.keys.updateDisplayCount = function() {
         $('#Capsule-count').html(plugin.keys.CapsuleID);
         break;
   }
-  $('#Total-count').html(plugin.keys.Total[plugin.keys.CapsuleID] ||0 );
+  $('#Total-count').html(plugin.keys.keys[plugin.keys.CapsuleID]['TOTAL'] ||0 );
 }
 
 window.plugin.keys.changeCapsuleID = function(addCount) {
-  plugin.keys.CapsuleID=Math.min(Math.max(plugin.keys.CapsuleID + addCount, 0),plugin.keys.keys.length);
+  plugin.keys.CapsuleID=Math.min(Math.max(plugin.keys.CapsuleID + addCount, 0),plugin.keys.NCapsules-1);
   plugin.keys.updateDisplayCount();
   window.runHooks('pluginKeysRefreshAll');
 }
@@ -115,118 +113,131 @@ window.plugin.keys.addKey = function(addCount, guid) {
   if (plugin.keys.CapsuleID==0) return;
   if(guid == undefined) guid = window.selectedPortal;
 
-  if (plugin.keys.keys[plugin.keys.CapsuleID]==undefined)
-    var oldCount = 0;
-  else
-    var oldCount = (plugin.keys.keys[plugin.keys.CapsuleID][guid]|| 0);
+  // if (plugin.keys.keys[plugin.keys.CapsuleID]==undefined)
+  //   var oldCount = 0;
+  // else
+  //   var oldCount = (plugin.keys.keys[plugin.keys.CapsuleID][guid]|| 0);
 
+  var oldCount = (plugin.keys.keys[plugin.keys.CapsuleID][guid]|| 0);
   var newCount = Math.max(oldCount + addCount, 0);
 
   if(oldCount !== newCount) {
     if(newCount === 0) {
       delete plugin.keys.keys[plugin.keys.CapsuleID][guid];
-      // SyncCode
-      // plugin.keys.updateQueue[guid] = null;
+      plugin.keys.updateQueue[plugin.keys.CapsuleID][guid] = null;
     } else {
-      if (plugin.keys.keys[plugin.keys.CapsuleID]==undefined) plugin.keys.keys[plugin.keys.CapsuleID] = {};
-      if (plugin.keys.Total[plugin.keys.CapsuleID]==undefined) plugin.keys.Total[plugin.keys.CapsuleID] = 0;
+      // if (plugin.keys.keys[plugin.keys.CapsuleID]==undefined) plugin.keys.keys[plugin.keys.CapsuleID] = {};
+      // if (plugin.keys.updateQueue[plugin.keys.CapsuleID]==undefined) plugin.keys.updateQueue[plugin.keys.CapsuleID] = {};
+      // if (plugin.keys.Total[plugin.keys.CapsuleID]==undefined) plugin.keys.Total[plugin.keys.CapsuleID] = 0;
       plugin.keys.keys[plugin.keys.CapsuleID][guid] = newCount
-      // SyncCode
-      // plugin.keys.updateQueue[guid] = newCount;
+      plugin.keys.updateQueue[plugin.keys.CapsuleID][guid] = newCount;
     }
     plugin.keys.keys[0][guid] = (plugin.keys.keys[0][guid] || 0) +newCount-oldCount;
+    plugin.keys.updateQueue[0][guid] = plugin.keys.keys[0][guid];
+
     if (plugin.keys.keys[0][guid]==0){
       delete plugin.keys.keys[0][guid];
-      // SyncCode
-      // plugin.keys.updateQueue[0][guid] = null;
+      plugin.keys.updateQueue[0][guid] = null;
     }
-    plugin.keys.Total[plugin.keys.CapsuleID]=plugin.keys.Total[plugin.keys.CapsuleID]+newCount-oldCount;
-    if ((plugin.keys.CapsuleID==plugin.keys.keys.length-1)&&(plugin.keys.Total[plugin.keys.CapsuleID]==0)) {
-      // console.log("Passed by here");
-      plugin.keys.keys.splice(plugin.keys.CapsuleID,1);
-      plugin.keys.Total.splice(plugin.keys.CapsuleID,1);
-      for (Index=1; Index<plugin.keys.CapsuleID;Index++){
-        if (plugin.keys.Total[plugin.keys.CapsuleID-Index]!=0)
-          break;
-        plugin.keys.keys.splice(plugin.keys.CapsuleID-Index,1);
-        plugin.keys.Total.splice(plugin.keys.CapsuleID-Index,1);
-      }
-      plugin.keys.CapsuleID=plugin.keys.CapsuleID-Index;
-    }
-    plugin.keys.Total[0]=plugin.keys.Total[0]+newCount-oldCount;
+    plugin.keys.keys[plugin.keys.CapsuleID]['TOTAL']=plugin.keys.keys[plugin.keys.CapsuleID]['TOTAL']+newCount-oldCount;
+    plugin.keys.keys[0]['TOTAL']=plugin.keys.keys[0]['TOTAL']+newCount-oldCount;
+
+    plugin.keys.updateQueue[plugin.keys.CapsuleID]['TOTAL']=plugin.keys.updateQueue[plugin.keys.CapsuleID]['TOTAL']+newCount-oldCount;
+    plugin.keys.updateQueue[0]['TOTAL']=plugin.keys.updateQueue[0]['TOTAL']+newCount-oldCount;
+
+    // if ((plugin.keys.CapsuleID==plugin.keys.keys.length-1)&&(plugin.keys.Total[plugin.keys.CapsuleID]==0)) {
+    //   // console.log("Passed by here");
+    //   plugin.keys.keys.splice(plugin.keys.CapsuleID,1);
+    //   plugin.keys.Total.splice(plugin.keys.CapsuleID,1);
+    //   for (Index=1; Index<plugin.keys.CapsuleID;Index++){
+    //     if (plugin.keys.Total[plugin.keys.CapsuleID-Index]!=0)
+    //       break;
+    //     plugin.keys.keys.splice(plugin.keys.CapsuleID-Index,1);
+    //     plugin.keys.Total.splice(plugin.keys.CapsuleID-Index,1);
+    //   }
+    //   plugin.keys.CapsuleID=plugin.keys.CapsuleID-Index;
+    // }
+
 
     plugin.keys.storeLocal(plugin.keys.KEY);
-    // SyncCode
-    // plugin.keys.storeLocal(plugin.keys.UPDATE_QUEUE);
+    plugin.keys.storeLocal(plugin.keys.UPDATE_QUEUE);
     plugin.keys.updateDisplayCount();
     window.runHooks('pluginKeysUpdateKey', {guid: guid, count: newCount});
-    // SyncCode
-    // plugin.keys.delaySync();
+    plugin.keys.delaySync();
+  }
+}
+
+// Delay the syncing to group a few updates in a single request
+window.plugin.keys.delaySync = function() {
+  if(!plugin.keys.enableSync) return;
+  clearTimeout(plugin.keys.delaySync.timer);
+  plugin.keys.delaySync.timer = setTimeout(function() {
+      plugin.keys.delaySync.timer = null;
+      window.plugin.keys.syncNow();
+    }, plugin.keys.SYNC_DELAY);
+}
+
+// Store the updateQueue in updatingQueue and upload
+window.plugin.keys.syncNow = function() {
+  if(!plugin.keys.enableSync) return;
+  $.extend(plugin.keys.updatingQueue, plugin.keys.updateQueue);
+  window.plugin.keys.updateQueue = [];
+  for (i = 0; i < plugin.keys.NCapsules; i++) {
+    window.plugin.keys.updateQueue[i] = {"TOTAL":0};
+  }
+  plugin.keys.storeLocal(plugin.keys.UPDATING_QUEUE);
+  plugin.keys.storeLocal(plugin.keys.UPDATE_QUEUE);
+
+  // plugin.sync.updateMap('keys', 'keys', Object.keys(plugin.keys.updatingQueue));
+  plugin.sync.updateMap('keys', 'keys', plugin.keys.updatingQueue);
+}
+
+// Call after IITC and all plugin loaded
+window.plugin.keys.registerFieldForSyncing = function() {
+  if(!window.plugin.sync) return;
+  window.plugin.sync.registerMapForSync('keys', 'keys', window.plugin.keys.syncCallback, window.plugin.keys.syncInitialed);
+}
+
+// Call after local or remote change uploaded
+window.plugin.keys.syncCallback = function(pluginName, fieldName, e, vv,fullUpdated) {
+  console.warn("Keys: I am in syncCallback");
+  if(fieldName === 'keys') {
+    plugin.keys.storeLocal(plugin.keys.KEY);
+    // All data is replaced if other client update the data during this client offline,
+    // fire 'pluginKeysRefreshAll' to notify a full update
+    if(fullUpdated) {
+      plugin.keys.updateDisplayCount();
+      window.runHooks('pluginKeysRefreshAll');
+      return;
+    }
+
+    if(!e) return;
+    if(e.isLocal) {
+      console.warn("Keys: e.isLocal: True");
+      // Update pushed successfully, remove it from updatingQueue
+      delete plugin.keys.updatingQueue[vv][e.property];
+    } else {
+      console.warn("Keys: e.isLocal: False");
+      // Remote update
+      delete plugin.keys.updateQueue[vv][e.property];
+      plugin.keys.storeLocal(plugin.keys.UPDATE_QUEUE);
+      plugin.keys.updateDisplayCount();
+      console.warn("Keys:pluginKeysUpdateKey guid="+JSON.stringify(e.property)+ ", count="+plugin.keys.keys[vv][e.property]);
+      window.runHooks('pluginKeysUpdateKey', {guid: e.property, count: plugin.keys.keys[vv][e.property]});
+    }
   }
 }
 // SyncCode
-// Delay the syncing to group a few updates in a single request
-// window.plugin.keys.delaySync = function() {
-//   if(!plugin.keys.enableSync) return;
-//   clearTimeout(plugin.keys.delaySync.timer);
-//   plugin.keys.delaySync.timer = setTimeout(function() {
-//       plugin.keys.delaySync.timer = null;
-//       window.plugin.keys.syncNow();
-//     }, plugin.keys.SYNC_DELAY);
-// }
-// SyncCode
-// Store the updateQueue in updatingQueue and upload
-// window.plugin.keys.syncNow = function() {
-//   if(!plugin.keys.enableSync) return;
-//   $.extend(plugin.keys.updatingQueue, plugin.keys.updateQueue);
-//   plugin.keys.updateQueue = {};
-//   plugin.keys.storeLocal(plugin.keys.UPDATING_QUEUE);
-//   plugin.keys.storeLocal(plugin.keys.UPDATE_QUEUE);
-
-//   plugin.sync.updateMap('keys', 'keys', Object.keys(plugin.keys.updatingQueue));
-// }
-// SyncCode
-// Call after IITC and all plugin loaded
-// window.plugin.keys.registerFieldForSyncing = function() {
-//   if(!window.plugin.sync) return;
-//   window.plugin.sync.registerMapForSync('keys', 'keys', window.plugin.keys.syncCallback, window.plugin.keys.syncInitialed);
-// }
-// SyncCode
-// // Call after local or remote change uploaded
-// window.plugin.keys.syncCallback = function(pluginName, fieldName, e, fullUpdated) {
-//   if(fieldName === 'keys') {
-//     plugin.keys.storeLocal(plugin.keys.KEY);
-//     // All data is replaced if other client update the data during this client offline,
-//     // fire 'pluginKeysRefreshAll' to notify a full update
-//     if(fullUpdated) {
-//       plugin.keys.updateDisplayCount();
-//       window.runHooks('pluginKeysRefreshAll');
-//       return;
-//     }
-
-//     if(!e) return;
-//     if(e.isLocal) {
-//       // Update pushed successfully, remove it from updatingQueue
-//       delete plugin.keys.updatingQueue[e.property];
-//     } else {
-//       // Remote update
-//       delete plugin.keys.updateQueue[e.property];
-//       plugin.keys.storeLocal(plugin.keys.UPDATE_QUEUE);
-//       plugin.keys.updateDisplayCount();
-//       window.runHooks('pluginKeysUpdateKey', {guid: e.property, count: plugin.keys.keys[e.property]});
-//     }
-//   }
-// }
-// SyncCode
 // syncing of the field is initialed, upload all queued update
-// window.plugin.keys.syncInitialed = function(pluginName, fieldName) {
-//   if(fieldName === 'keys') {
-//     plugin.keys.enableSync = true;
-//     if(Object.keys(plugin.keys.updateQueue).length > 0) {
-//       plugin.keys.delaySync();
-//     }
-//   }
-// }
+window.plugin.keys.syncInitialed = function(pluginName, fieldName) {
+  if(fieldName === 'keys') {
+    plugin.keys.enableSync = true;
+    if(Object.keys(plugin.keys.updateQueue[0]).length > 0) {
+      console.warn("Keys: I just initiated sync");
+      plugin.keys.delaySync();
+    }
+  }
+}
 
 window.plugin.keys.storeLocal = function(mapping) {
   if(typeof(plugin.keys[mapping.field]) !== 'undefined' && plugin.keys[mapping.field] !== null) {
@@ -245,19 +256,12 @@ window.plugin.keys.loadLocal = function(mapping) {
                           : JSON.parse(objectJSON);
 
   if (plugin.keys[mapping.field].length==0) {
-    plugin.keys[mapping.field][0]={};
-    plugin.keys.Total[0]=0;
-  }else if (mapping.key=='plugin-keys-data') {
+    plugin.keys[mapping.field][0]={"TOTAL":0};
+  }else{
     plugin.keys[mapping.field].splice(0 , 0, {});
     plugin.keys[mapping.field][0]=Object.assign({}, plugin.keys[mapping.field][1]);
-    plugin.keys.Total[1]=0;
-    $.each(plugin.keys[mapping.field][1], function(key, count) {plugin.keys.Total[1]=plugin.keys.Total[1]+count;});
-    plugin.keys.Total[0]= plugin.keys.Total[1];
     for (i = 2; i < plugin.keys[mapping.field].length; i++) {
-      plugin.keys.Total[i]=0;
       plugin.keys[mapping.field][0] = window.plugin.keys.mergeKeys(plugin.keys[mapping.field][0] , plugin.keys[mapping.field][i]);
-      $.each(plugin.keys[mapping.field][i], function(key, count) {plugin.keys.Total[i]=plugin.keys.Total[i]+count;});
-      plugin.keys.Total[0] += plugin.keys.Total[i];
     }
   }
 }
@@ -324,7 +328,6 @@ window.plugin.keys.setupPortalsList = function() {
 
   window.addHook('pluginKeysUpdateKey', function(data) {
     $('[data-list-keycount="'+data.guid+'"]').text(data.count || 0);
-    // $('[data-list-keycount="'+data.guid+'"]').text(data.count);
   });
 
   window.addHook('pluginKeysRefreshAll', function() {
@@ -381,12 +384,10 @@ var setup =  function() {
 
   window.plugin.keys.setupCSS();
   window.plugin.keys.setupContent();
-  // SyncCode
-  // window.plugin.keys.loadLocal(plugin.keys.UPDATE_QUEUE);
-  // window.plugin.keys.loadKeys();
+  window.plugin.keys.loadLocal(plugin.keys.KEY);
+  window.plugin.keys.loadLocal(plugin.keys.UPDATE_QUEUE);
   window.addHook('portalDetailsUpdated', window.plugin.keys.addToSidebar);
-  // SyncCode
-  // window.addHook('iitcLoaded', window.plugin.keys.registerFieldForSyncing);
+  window.addHook('iitcLoaded', window.plugin.keys.registerFieldForSyncing);
 
   if(window.plugin.portalslist) {
     window.plugin.keys.setupPortalsList();
